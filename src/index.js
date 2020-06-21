@@ -54,8 +54,7 @@ client.on('message', (message) => {
 
       var replyMessage = {
         channel: message.channel,
-        text: reply,
-        as_user: true
+        text: reply
       };
 
       // If bot is configured to reply as a thread, or if the message that
