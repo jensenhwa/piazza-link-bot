@@ -35,7 +35,8 @@ slackEvents.on('message', (message) => {
       var replyMessage = {
         channel: message.channel,
         text: reply,
-        unfurl_media: false
+        unfurl_media: false,
+        unfurl_links: false
       };
 
       // If bot is configured to reply as a thread, or if the message that

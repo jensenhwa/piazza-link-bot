@@ -31,7 +31,7 @@ var config = {
   retryMemory: process.env['RETRY_MEMORY'] || 100,
 
   build: function (id) {
-    this.regexes.push({ regex: /@(\d+)/g, message: this.piazza_base_url + '?cid=[1]' });
+    this.regexes.push({ regex: /@(\d+)/g, message: '<' + this.piazza_base_url + '?cid=[1]>' });
   }
 };
 module.exports = config;
