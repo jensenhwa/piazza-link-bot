@@ -1,9 +1,7 @@
 module.exports = {
-    "extends": "standard",
-    "installedESLint": true,
-    "plugins": [
-        "standard"
-    ],
+    "parserOptions": {
+        "ecmaVersion": 2020
+    },
     "rules": {
     	"semi": ["error", "always"]
     }

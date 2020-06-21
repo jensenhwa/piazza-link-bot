@@ -8,38 +8,18 @@ var randomiser = function (max) {
 var regexbot = new RegexBot(config, randomiser);
 var retryFilter = new RetryFilter(config);
 
-const { RTMClient, WebClient, ErrorCode } = require('@slack/client');
+const { WebClient, ErrorCode } = require('@slack/web-api');
 const { createEventAdapter } = require('@slack/events-api');
 
 // Create a web client to send messages back to Slack
-var web = new WebClient(config.slack_api_token);
+const web = new WebClient(config.slack_api_token);
 
-// Set up either an RTM or an Events API client
-if (config.use_rtm) {
-  var client = new RTMClient(config.slack_api_token);
-  client.on('authenticated', (rtmStartData) => {
-    console.log(`Logged in as "${rtmStartData.self.name}" of team "${rtmStartData.team.name}", but not yet connected to a channel`);
-    console.log(rtmStartData.self.id);
-    config.build(rtmStartData.self.id);
-  });
-  client.start();
-} else {
-  client = createEventAdapter(config.events.signing_secret);
-  client.start(config.events.port).then(() => {
-    console.log('server listening on port ' + config.events.port);
-    config.build(config.events.port);
-  });
-}
+const slackEvents = createEventAdapter(config.events.signing_secret);
 
-// Listen for messages (works the same for both RTM and Events API)
-client.on('message', (message) => {
+// Listen for messages
+slackEvents.on('message', (message) => {
   console.log('Received a message');
   if (message.subtype === 'bot_message' || message.hasOwnProperty('bot_id')) {
-    return;
-  }
-
-  // This check only applies for the RTM client
-  if (config.use_rtm && message.user === client.activeUserId) {
     return;
   }
 
@@ -54,7 +34,8 @@ client.on('message', (message) => {
 
       var replyMessage = {
         channel: message.channel,
-        text: reply
+        text: reply,
+        unfurl_media: false
       };
 
       // If bot is configured to reply as a thread, or if the message that
@@ -66,7 +47,7 @@ client.on('message', (message) => {
 
       postMessage(replyMessage);
     });
-  };
+  }
 
   function messageIsDuplicate (message) {
     console.log('Message is a duplicate');
@@ -75,7 +56,7 @@ client.on('message', (message) => {
   retryFilter.filter(message, messageOkay, messageIsDuplicate);
 });
 
-client.on('error', console.error);
+slackEvents.on('error', console.error);
 
 function postMessage (options) {
   web.chat.postMessage(options)
@@ -91,6 +72,11 @@ function postMessage (options) {
     });
 }
 
-var scheduler = require('./schedule.js');
-var poster = function (channel, msg) { postMessage({ channel: channel, text: msg, as_user: true }); };
-scheduler(config.schedules, poster);
+(async () => {
+  // Start the built-in server
+  const server = await slackEvents.start(config.events.port);
+
+  // Log a message when the server is ready
+  console.log(`Listening for events on ${server.address().port}`);
+  config.build(config.events.port);
+})();
