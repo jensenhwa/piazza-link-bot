@@ -7,8 +7,7 @@
   "dependencies": {
     "@slack/events-api": "^2.3.3",
     "@slack/web-api": "^5.10.0",
-    "jira-client": "^6.17.0",
-    "node-schedule": "^1.3.2"
+    "piazza-api": "^1.0.1"
   },
   "devDependencies": {
     "chai": "^4.2.0",

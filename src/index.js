@@ -1,7 +1,11 @@
 /* vim: set ft=javascript ts=2 et sw=2 tw=80: */
+
+
 var config = require('./config');
 var RegexBot = require('./regexbot');
 var RetryFilter = require('./retryfilter');
+var Piazza = require('piazza-api');
+var urlregex = /\/class\/([^?]*)\?cid=(.*)/
 var randomiser = function (max) {
   return Math.floor(Math.random() * max);
 };
@@ -10,6 +14,9 @@ var retryFilter = new RetryFilter(config);
 
 const { WebClient, ErrorCode } = require('@slack/web-api');
 const { createEventAdapter } = require('@slack/events-api');
+const user = Piazza.login('hwaj+388@umich.edu', 'UA5#4mnPE4RKfgVG').then((user) => {
+  console.log('logged in as' + user.name)
+})
 
 // Create a web client to send messages back to Slack
 const web = new WebClient(config.slack_api_token);
@@ -55,6 +62,22 @@ slackEvents.on('message', (message) => {
   }
 
   retryFilter.filter(message, messageOkay, messageIsDuplicate);
+});
+
+slackEvents.on('link_shared', (event) => {
+  let unfurl = {
+    channel: event.channel,
+    ts: event.message_ts,
+    unfurls: {}
+  };
+  for (const link of event.links) {
+    let findings = link.url.match(urlregex);
+    console.log(findings);
+    let content = user.getClassByID(findings[1]).getContentByID(findings[2]);
+    console.log(content);
+    // unfurl.unfurls[link.url] =
+  }
+  // web.chat.unfurl(unfurl);
 });
 
 slackEvents.on('error', console.error);
