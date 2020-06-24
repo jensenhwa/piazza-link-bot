@@ -164,10 +164,26 @@ function link_handler(links) {
   return Promise.all(promises)
 }
 
+// function getAnonymousIcon(id) {
+//   var nr = parseInt(id.replace("a_", "")) + 1;
+//   var rnd = P.note_view.content.id.charCodeAt(P.note_view.content.id.length - 1);
+//   var bigPrimes = [23, 29, 31, 37]; // 36 primes
+//   var idx = bigPrimes[rnd % bigPrimes.length] * nr + rnd;
+//   var names = ['anon_icon-01', 'anon_icon-02', 'anon_icon-03', 'anon_icon-04', 'anon_icon-05', 'anon_icon-06', 'anon_icon-07', 'anon_icon-08', 'anon_icon-09'];
+//   var namesC = ['Atom', 'Helix', 'Mouse', 'Beaker', 'Calc', 'Comp', 'Gear', 'Scale', 'Poet'];
+//   var level = parseInt((nr - 1) / names.length);
+//   var title = namesC[idx % names.length];
+//   if (level > 0) {
+//     title += " " + (level + 1);
+//   }
+//   return {icon:names[idx % names.length], title:title};
+// }
+
 function unfurl_piazza(url) {
   let findings = url.match(urlregex)
   const nid = findings[1]
   const post = findings[2]
+  let msgAttachment
   return new Promise(resolve => {
     Piazza('content.get', {
       nid: nid,
@@ -176,7 +192,7 @@ function unfurl_piazza(url) {
       .then((res) => {
         console.log(res.data.result.history[0])
         const postContent = turndownService.turndown(res.data.result.history[0].content)
-        const msgAttachment = {
+        msgAttachment = {
           color: '#3e7aab',
           title: turndownService.turndown(res.data.result.history[0].subject),
           title_link: 'https://piazza.com/class/' + nid + '?cid=' + post,
@@ -189,10 +205,10 @@ function unfurl_piazza(url) {
         const authors = new Set()
         for (let i = 0; i < res.data.result.history.length; i++) {
           let entry = res.data.result.history[i]
-          console.log("inspecting", entry)
-          authors.add(entry.uid)
-          if (entry.anon !== 'no')
-            anons.add(entry.uid)
+          if (uid in entry)
+            authors.add(entry.uid)
+          else
+            anons.add(entry.uid_a)
         }
         return Piazza('network.get_users', { ids: Array.from(authors), nid: nid })
       })
