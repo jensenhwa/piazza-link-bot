@@ -79,7 +79,7 @@ slackEvents.on('link_shared', (event) => {
       for (let i = 0; i < results.length; i++) {
         unfurl.unfurls[results[i].url] = results[i].resp
       }
-      web.chat.unfurl(results).then((resp)=> {
+      web.chat.unfurl(unfurl).then((resp)=> {
         console.log("yayyyy")
         console.log(resp)
       });
@@ -184,6 +184,7 @@ function unfurl_piazza(url) {
   const nid = findings[1]
   const post = findings[2]
   let msgAttachment
+  let anons
   return new Promise(resolve => {
     Piazza('content.get', {
       nid: nid,
@@ -201,7 +202,7 @@ function unfurl_piazza(url) {
           fields: [],
         }
         msgAttachment.fields.push(constructStatusField(res.data.result))
-        const anons = new Set()
+        anons = new Set()
         const authors = new Set()
         for (let i = 0; i < res.data.result.history.length; i++) {
           let entry = res.data.result.history[i]
