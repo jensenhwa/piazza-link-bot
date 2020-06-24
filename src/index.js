@@ -227,11 +227,7 @@ function unfurl_piazza(url) {
           short: true,
         })
         console.log(msgAttachment)
-        resolve({url: url, resp: {
-            text: '@' + post + ' attached:',
-            attachments: JSON.stringify([msgAttachment])
-          }
-        })
+        resolve({url: url, resp: msgAttachment })
       })
       .catch((err) => {
         console.log(err)
