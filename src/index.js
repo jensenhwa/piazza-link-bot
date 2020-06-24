@@ -174,7 +174,7 @@ function unfurl_piazza(url) {
       cid: post
     })
       .then((res) => {
-        console.log(res.data.result.history[0].content)
+        console.log(res.data.result.history[0])
         const postContent = turndownService.turndown(res.data.result.history[0].content)
         const msgAttachment = {
           color: '#3e7aab',
@@ -189,6 +189,7 @@ function unfurl_piazza(url) {
         const authors = new Set()
         for (let i = 0; i < res.data.result.history.length; i++) {
           let entry = res.data.result.history[i]
+          console.log("inspecting", entry)
           authors.add(entry.uid)
           if (entry.anon !== 'no')
             anons.add(entry.uid)
@@ -216,7 +217,7 @@ function unfurl_piazza(url) {
         })
       })
       .catch((err) => {
-        console.log(err.toJSON())
+        console.log(err)
       })
   })
 }
