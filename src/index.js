@@ -205,7 +205,7 @@ function unfurl_piazza(url) {
         const authors = new Set()
         for (let i = 0; i < res.data.result.history.length; i++) {
           let entry = res.data.result.history[i]
-          if (uid in entry)
+          if ("uid" in entry)
             authors.add(entry.uid)
           else
             anons.add(entry.uid_a)
