@@ -74,60 +74,17 @@ slackEvents.on('link_shared', (event) => {
     ts: event.message_ts,
     unfurls: {}
   }
-  for (const link of event.links) {
-    let findings = link.url.match(urlregex)
-    console.log(findings)
-    Piazza('content.get', {
-      nid: findings[1],
-      cid: findings[2]
-    })
-      .then((res) => {
-        console.log(res.data.result.history[0].content)
-        postContent = turndownService.turndown(res.data.result.history[0].content)
-        msgAttachment = {
-          color: '#3e7aab',
-          title: turndownService.turndown(res.data.result.history[0].subject),
-          title_link: 'https://piazza.com/class/' + findings[1] + '?cid=' + findings[2],
-          text: postContent,
-          mrkdwn_in: ['text'],
-          fields: [],
-        }
-        msgAttachment.fields.push(constructStatusField(res.data.result))
-        console.log(msgAttachment)
-        anons = new Set()
-        authors = new Set()
-        for (entry of res.data.result.history) {
-          authors.add(entry.uid)
-          if (entry.anon !== 'no')
-            anons.add(entry.uid)
-        }
-        return Piazza('network.get_users', { ids: JSON.stringify(Array.from(authors)), nid: findings[1] })
-      })
-      .then((res) => {
-        console.log(res)
-        msgAttachment.fields.push({
-          title: res.data.result.length > 1 ? 'Authors' : 'Author',
-          value: res.data.result.map(function (e) {
-            if (anons.has(e.id)) {
-              return e.name + ' (anon)'
-            } else {
-              return e.name
-            }
-          }).join('\n'),
-          short: true,
-        })
-        console.log(msgAttachment)
-        unfurl.unfurls[link.url] = {
-          text: '@' + findings[2] + ' attached:',
-          attachments: JSON.stringify([msgAttachment])
-        }
-      })
-      .catch((err) => {
-        console.log(err.toJSON())
-      })
-    //
-  }
-  web.chat.unfurl(unfurl);
+  link_handler(event.links).then((results)=>
+    {
+      for (let i = 0; i < results.length; i++) {
+        unfurl.unfurls[results[i].url] = results[i].resp
+      }
+      web.chat.unfurl(results).then((resp)=> {
+        console.log("yayyyy")
+        console.log(resp)
+      });
+    }
+  )
 })
 
 slackEvents.on('error', console.error)
@@ -157,7 +114,7 @@ function postMessage (options) {
 
 function constructStatusField (res) {
   let statusText = []
-  let statusEmoji = ':white_check_mark:'
+  let statusEmoji
   if (res.type === 'note') {
     statusEmoji = ':notebook:'
   } else if (res.no_answer > 0) {
@@ -168,7 +125,7 @@ function constructStatusField (res) {
     for (node of res.children) {
       if (node.type === 's_answer') {
         let pending = 'Student answered. '
-        instructor_endorsed = false
+        let instructor_endorsed = false
         for (e of node.tag_endorse) {
           if (e.admin) {
             instructor_endorsed = true
@@ -196,4 +153,70 @@ function constructStatusField (res) {
     value: statusText.join('\n'),
     short: true,
   }
+}
+
+function link_handler(links) {
+  const promises = []
+  for (const link of links) {
+    promises.push(unfurl_piazza(link.url))
+    //
+  }
+  return Promise.all(promises)
+}
+
+function unfurl_piazza(url) {
+  let findings = url.match(urlregex)
+  const nid = findings[1]
+  const post = findings[2]
+  return new Promise(resolve => {
+    Piazza('content.get', {
+      nid: nid,
+      cid: post
+    })
+      .then((res) => {
+        console.log(res.data.result.history[0].content)
+        const postContent = turndownService.turndown(res.data.result.history[0].content)
+        const msgAttachment = {
+          color: '#3e7aab',
+          title: turndownService.turndown(res.data.result.history[0].subject),
+          title_link: 'https://piazza.com/class/' + nid + '?cid=' + post,
+          text: postContent,
+          mrkdwn_in: ['text'],
+          fields: [],
+        }
+        msgAttachment.fields.push(constructStatusField(res.data.result))
+        const anons = new Set()
+        const authors = new Set()
+        for (let i = 0; i < res.data.result.history.length; i++) {
+          let entry = res.data.result.history[i]
+          authors.add(entry.uid)
+          if (entry.anon !== 'no')
+            anons.add(entry.uid)
+        }
+        return Piazza('network.get_users', { ids: Array.from(authors), nid: nid })
+      })
+      .then((res) => {
+        console.log(res)
+        msgAttachment.fields.push({
+          title: res.data.result.length > 1 ? 'Authors' : 'Author',
+          value: res.data.result.map(function (e) {
+            if (anons.has(e.id)) {
+              return e.name + ' (anon)'
+            } else {
+              return e.name
+            }
+          }).join('\n'),
+          short: true,
+        })
+        console.log(msgAttachment)
+        resolve({url: url, resp: {
+            text: '@' + post + ' attached:',
+            attachments: JSON.stringify([msgAttachment])
+          }
+        })
+      })
+      .catch((err) => {
+        console.log(err.toJSON())
+      })
+  })
 }
