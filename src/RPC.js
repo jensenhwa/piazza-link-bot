@@ -11,7 +11,6 @@ var apiURL = 'https://piazza.com/logic/api'
 var RPC = function (method, params) {
   let headers = {}
   if (cookieJar.getCookiesSync(apiURL).length) {
-    console.log(cookieJar.getCookiesSync(apiURL))
     headers = { 'CSRF-Token': cookieJar.getCookiesSync(apiURL)[1].value }
   }
   let tempURL = apiURL + '?method=' + method + '&aid=' +

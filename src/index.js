@@ -101,10 +101,10 @@ slackEvents.on('link_shared', (event) => {
           if (entry.anon !== 'no')
             anons.add(entry.uid)
         }
-        return Piazza('network.get_users', { ids: Array.from(authors), nid: 'k4iv85stjw02kh' })
+        return Piazza('network.get_users', { ids: JSON.stringify(Array.from(authors)), nid: findings[1] })
       })
       .then((res) => {
-
+        console.log(res)
         msgAttachment.fields.push({
           title: res.data.result.length > 1 ? 'Authors' : 'Author',
           value: res.data.result.map(function (e) {
@@ -127,7 +127,7 @@ slackEvents.on('link_shared', (event) => {
       })
     //
   }
-  // web.chat.unfurl(unfurl);
+  web.chat.unfurl(unfurl);
 })
 
 slackEvents.on('error', console.error)
