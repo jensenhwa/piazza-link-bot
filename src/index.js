@@ -1,11 +1,12 @@
 /* vim: set ft=javascript ts=2 et sw=2 tw=80: */
 
-
 var config = require('./config');
 var RegexBot = require('./regexbot');
 var RetryFilter = require('./retryfilter');
-var Piazza = require('piazza-api');
-var urlregex = /\/class\/([^?]*)\?cid=(.*)/
+var Piazza = require('./RPC');
+var urlregex = /\/class\/([^?]*)\?cid=(.*)/;
+var TurndownService = require('turndown')
+var turndownService = new TurndownService()
 var randomiser = function (max) {
   return Math.floor(Math.random() * max);
 };
@@ -14,9 +15,14 @@ var retryFilter = new RetryFilter(config);
 
 const { WebClient, ErrorCode } = require('@slack/web-api');
 const { createEventAdapter } = require('@slack/events-api');
-const user = Piazza.login('hwaj+388@umich.edu', 'UA5#4mnPE4RKfgVG').then((user) => {
-  console.log('logged in as' + user.name)
-})
+const user = Piazza('user.login', {
+  email: 'hwaj+388@umich.edu',
+  pass: 'UA5#4mnPE4RKfgVG'
+}).then((user) => {
+  console.log('logged in as' + user.name);
+}).catch(function (error) {
+    console.log('Failed to login to Piazza: ', error);
+});
 
 // Create a web client to send messages back to Slack
 const web = new WebClient(config.slack_api_token);
@@ -73,9 +79,53 @@ slackEvents.on('link_shared', (event) => {
   for (const link of event.links) {
     let findings = link.url.match(urlregex);
     console.log(findings);
-    let content = user.getClassByID(findings[1]).getContentByID(findings[2]);
-    console.log(content);
-    // unfurl.unfurls[link.url] =
+    Piazza('content.get', {
+      nid: 'k4iv85stjw02kh',
+      cid: 'kbi20q6sl5l143'
+    })
+      .then((res) => {
+        console.log(res.data.result)
+        postContent = turndownService.turndown(res.data.result.history[0].content)
+        msgAttachment = {
+          color: '#3e7aab',
+          title: turndownService.turndown(res.data.result.history[0].subject),
+          title_link: 'https://piazza.com/class/' + findings[1] + '?cid=' + findings[2],
+          text: postContent,
+          mrkdwn_in: ['text'],
+          fields: [],
+        }
+        msgAttachment.fields.push(constructStatusField(res.data.result))
+
+        anons = new Set()
+        authors = new Set()
+        for (entry of res.data.result.history) {
+          authors.add(entry.uid)
+          if (entry.anon !== 'no')
+            anons.add(entry.uid)
+        }
+        return Piazza('network.get_users', {ids: Array.from(authors), nid: 'k4iv85stjw02kh'})})
+          .then((res) => {
+        if (err) {
+          return;
+        }
+
+        msgAttachment.fields.push({
+          title: res.data.result.length > 1 ? 'Authors' : 'Author',
+          value: res.data.result.map(function(e) {
+            if (anons.has(e.id)) {
+              return e.name + " (anon)";
+            } else {
+              return e.name;
+            }
+          }).join("\n"),
+          short: true,
+        })
+        unfurl.unfurls[link.url] = {
+          text: "@" + findings[2] + " attached:",
+          attachments: JSON.stringify([msgAttachment])
+        }
+      });
+    //
   }
   // web.chat.unfurl(unfurl);
 });
@@ -104,3 +154,46 @@ function postMessage (options) {
   console.log(`Listening for events on ${server.address().port}`);
   config.build(config.events.port);
 })();
+
+function constructStatusField (res) {
+  let statusText = [];
+  let statusEmoji = ':white_check_mark:';
+  if (res.type === 'note') {
+    statusEmoji = ':notebook:';
+  } else if (res.no_answer > 0) {
+    statusEmoji = ':x:';
+    statusText.push('No answer.');
+  } else {
+    let instructor_handled = false;
+    for (node of res.children) {
+      if (node.type === 's_answer') {
+        let pending = 'Student answered. ';
+        instructor_endorsed = false;
+        for (e of node.tag_endorse) {
+          if (e.admin) {
+            instructor_endorsed = true;
+            instructor_handled = true;
+            break;
+          }
+        }
+        pending += instructor_endorsed ? '[Endorsed]' : '[Unendorsed]';
+        statusText.push(pending);
+      } else if (node.type === 'i_answer') {
+        instructor_handled = true;
+        statusText.push('Instructor answered.');
+      }
+    }
+    statusEmoji = instructor_handled ? ':white_check_mark:' : ':warning:';
+  }
+
+  if (res.no_answer_followup > 0) {
+    statusEmoji = ':x:';
+    statusText.unshift(res.no_answer_followup.toString() + ' unresolved ' +
+    res.no_answer_followup > 1 ? ' followups.' : ' followup.');
+  }
+  return {
+    title: 'Status ' + statusEmoji,
+    value: statusText.join('\n'),
+    short: true,
+  };
+}
