@@ -48,8 +48,6 @@ slackEvents.on('message', (message) => {
       var replyMessage = {
         channel: message.channel,
         text: reply,
-        unfurl_media: false,
-        unfurl_links: false
       };
 
       // If bot is configured to reply as a thread, or if the message that
@@ -105,9 +103,6 @@ slackEvents.on('link_shared', (event) => {
         }
         return Piazza('network.get_users', {ids: Array.from(authors), nid: 'k4iv85stjw02kh'})})
           .then((res) => {
-        if (err) {
-          return;
-        }
 
         msgAttachment.fields.push({
           title: res.data.result.length > 1 ? 'Authors' : 'Author',
@@ -124,6 +119,9 @@ slackEvents.on('link_shared', (event) => {
           text: "@" + findings[2] + " attached:",
           attachments: JSON.stringify([msgAttachment])
         }
+      })
+      .catch((err) => {
+        console.log(err.toJSON())
       });
     //
   }
