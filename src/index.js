@@ -15,14 +15,8 @@ var retryFilter = new RetryFilter(config)
 
 const { WebClient, ErrorCode } = require('@slack/web-api')
 const { createEventAdapter } = require('@slack/events-api')
-const user = Piazza('user.login', {
-  email: 'hwaj+388@umich.edu',
-  pass: 'UA5#4mnPE4RKfgVG'
-}).then((user) => {
-  console.log('logged in as' + user.name)
-}).catch(function (error) {
-  console.log('Failed to login to Piazza: ', error)
-})
+
+Piazza.login()
 
 // Create a web client to send messages back to Slack
 const web = new WebClient(config.slack_api_token)
@@ -57,7 +51,17 @@ slackEvents.on('message', (message) => {
         replyMessage.thread_ts = message.thread_ts || message.ts
       }
 
-      postMessage(replyMessage)
+      web.chat.postMessage(replyMessage)
+        .catch((error) => {
+          if (error.code === ErrorCode.PlatformError) {
+            // a platform error occurred, `error.message` contains error information, `error.data` contains the entire resp
+            console.error(error.message)
+            console.info(error.data)
+          } else {
+            // some other error occurred
+            console.error(error)
+          }
+        })
     })
   }
 
@@ -74,34 +78,19 @@ slackEvents.on('link_shared', (event) => {
     ts: event.message_ts,
     unfurls: {}
   }
-  link_handler(event.links).then((results)=>
-    {
+  link_handler(event.links).then((results) => {
       for (let i = 0; i < results.length; i++) {
         unfurl.unfurls[results[i].url] = results[i].resp
       }
-      web.chat.unfurl(unfurl).then((resp)=> {
-        console.log("yayyyy")
+      web.chat.unfurl(unfurl).then((resp) => {
+        console.log('yayyyy')
         console.log(resp)
-      });
+      })
     }
   )
 })
 
 slackEvents.on('error', console.error)
-
-function postMessage (options) {
-  web.chat.postMessage(options)
-    .catch((error) => {
-      if (error.code === ErrorCode.PlatformError) {
-        // a platform error occurred, `error.message` contains error information, `error.data` contains the entire resp
-        console.error(error.message)
-        console.info(error.data)
-      } else {
-        // some other error occurred
-        console.error(error)
-      }
-    })
-}
 
 (async () => {
   // Start the built-in server
@@ -111,6 +100,69 @@ function postMessage (options) {
   console.log(`Listening for events on ${server.address().port}`)
   config.build(config.events.port)
 })()
+
+function link_handler (links) {
+  const promises = []
+  for (const link of links) {
+    promises.push(unfurl_piazza(link.url))
+  }
+  return Promise.all(promises)
+}
+
+
+function unfurl_piazza (url) {
+  let findings = url.match(urlregex)
+  const nid = findings[1]
+  const post = findings[2]
+  let msgAttachment
+  let anons
+  return new Promise(resolve => {
+    Piazza.getPost(nid, post)
+      .then((res) => {
+        console.log(res.history[0])
+        const postContent = turndownService.turndown(res.history[0].content)
+        msgAttachment = {
+          color: '#3e7aab',
+          title: turndownService.turndown(res.history[0].subject),
+          title_link: 'https://piazza.com/class/' + nid + '?cid=' + post,
+          text: postContent,
+          mrkdwn_in: ['text'],
+          fields: [],
+        }
+        msgAttachment.fields.push(constructStatusField(res))
+        anons = new Set()
+        const authors = new Set()
+        for (let i = 0; i < res.history.length; i++) {
+          let entry = res.history[i]
+          if ('uid' in entry)
+            authors.add(entry.uid)
+          else
+            anons.add(entry.uid_a)
+        }
+        return Piazza.getUsers(nid, Array.from(authors))
+      })
+      .then((res) => {
+        console.log(res)
+        msgAttachment.fields.push({
+          title: res.length > 1 ? 'Authors' : 'Author',
+          value: res.map(function (e) {
+            if (anons.has(e.id)) {
+              return e.name + ' (anon)'
+            } else {
+              return e.name
+            }
+          }).join('\n'),
+          short: true,
+        })
+        console.log(msgAttachment)
+        resolve({ url: url, resp: msgAttachment })
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+  })
+}
+
 
 function constructStatusField (res) {
   let statusText = []
@@ -155,15 +207,6 @@ function constructStatusField (res) {
   }
 }
 
-function link_handler(links) {
-  const promises = []
-  for (const link of links) {
-    promises.push(unfurl_piazza(link.url))
-    //
-  }
-  return Promise.all(promises)
-}
-
 // function getAnonymousIcon(id) {
 //   var nr = parseInt(id.replace("a_", "")) + 1;
 //   var rnd = P.note_view.content.id.charCodeAt(P.note_view.content.id.length - 1);
@@ -178,59 +221,3 @@ function link_handler(links) {
 //   }
 //   return {icon:names[idx % names.length], title:title};
 // }
-
-function unfurl_piazza(url) {
-  let findings = url.match(urlregex)
-  const nid = findings[1]
-  const post = findings[2]
-  let msgAttachment
-  let anons
-  return new Promise(resolve => {
-    Piazza('content.get', {
-      nid: nid,
-      cid: post
-    })
-      .then((res) => {
-        console.log(res.data.result.history[0])
-        const postContent = turndownService.turndown(res.data.result.history[0].content)
-        msgAttachment = {
-          color: '#3e7aab',
-          title: turndownService.turndown(res.data.result.history[0].subject),
-          title_link: 'https://piazza.com/class/' + nid + '?cid=' + post,
-          text: postContent,
-          mrkdwn_in: ['text'],
-          fields: [],
-        }
-        msgAttachment.fields.push(constructStatusField(res.data.result))
-        anons = new Set()
-        const authors = new Set()
-        for (let i = 0; i < res.data.result.history.length; i++) {
-          let entry = res.data.result.history[i]
-          if ("uid" in entry)
-            authors.add(entry.uid)
-          else
-            anons.add(entry.uid_a)
-        }
-        return Piazza('network.get_users', { ids: Array.from(authors), nid: nid })
-      })
-      .then((res) => {
-        console.log(res)
-        msgAttachment.fields.push({
-          title: res.data.result.length > 1 ? 'Authors' : 'Author',
-          value: res.data.result.map(function (e) {
-            if (anons.has(e.id)) {
-              return e.name + ' (anon)'
-            } else {
-              return e.name
-            }
-          }).join('\n'),
-          short: true,
-        })
-        console.log(msgAttachment)
-        resolve({url: url, resp: msgAttachment })
-      })
-      .catch((err) => {
-        console.log(err)
-      })
-  })
-}
