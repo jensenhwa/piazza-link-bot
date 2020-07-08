@@ -84,7 +84,6 @@ slackEvents.on('link_shared', (event) => {
       }
       web.chat.unfurl(unfurl).then((resp) => {
         console.log('yayyyy')
-        console.log(resp)
       })
     }
   )
@@ -112,8 +111,9 @@ function unfurl_piazza (url) {
   return new Promise(resolve => {
     Piazza.getPost(nid, post)
       .then((res) => {
-        console.log(res.history[0])
         const postContent = turndownService.turndown(res.history[0].content)
+        console.log(postContent)
+        console.log("\n\n\n\n\n done \n\n\n\n")
         msgAttachment = {
           color: '#3e7aab',
           title: turndownService.turndown(res.history[0].subject),
@@ -147,7 +147,6 @@ function unfurl_piazza (url) {
           }).join('\n'),
           short: true,
         })
-        console.log(msgAttachment)
         resolve({ url: url, resp: msgAttachment })
       })
       .catch((err) => {
