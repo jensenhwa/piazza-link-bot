@@ -190,8 +190,7 @@ function constructStatusField (res) {
 
   if (res.no_answer_followup > 0) {
     statusEmoji = ':x:'
-    statusText.unshift(res.no_answer_followup.toString() + ' unresolved ' +
-    res.no_answer_followup > 1 ? ' followups.' : ' followup.')
+    statusText.unshift(res.no_answer_followup.toString() + ' unresolved ' + res.no_answer_followup > 1 ? ' followups.' : ' followup.')
   }
   return {
     title: 'Status ' + statusEmoji,
