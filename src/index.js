@@ -92,14 +92,7 @@ slackEvents.on('link_shared', (event) => {
 
 slackEvents.on('error', console.error)
 
-(async () => {
-  // Start the built-in server
-  const server = await slackEvents.start(config.events.port)
 
-  // Log a message when the server is ready
-  console.log(`Listening for events on ${server.address().port}`)
-  config.build(config.events.port)
-})()
 
 function link_handler (links) {
   const promises = []
@@ -221,3 +214,11 @@ function constructStatusField (res) {
 //   }
 //   return {icon:names[idx % names.length], title:title};
 // }
+(async () => {
+  // Start the built-in server
+  const server = await slackEvents.start(config.events.port)
+
+  // Log a message when the server is ready
+  console.log(`Listening for events on ${server.address().port}`)
+  config.build(config.events.port)
+})()
