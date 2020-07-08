@@ -1,5 +1,7 @@
-var TurndownService = require('turndown');
-var turndownService = new TurndownService({codeBlockStyle: 'fenced'})
+const TurndownService = require('turndown')
+const turndownService = new TurndownService({ codeBlockStyle: 'fenced' })
+let firstImgSrc
+
 turndownService.addRule('paragraph', {
   filter: 'p',
   replacement: function(content) {
@@ -34,23 +36,22 @@ turndownService.addRule('bold', {
   }
 })
 
-var markdown = function(html) {
-  var converted, firstImgSrc;
+function markdown(html) {
   firstImgSrc = null;
-  html = html.replace(/\n/g, '<br>');
-  converted = turndownService.turndown(html)
-  converted = converted.replace(/<<([^\|]+)\|img>>/, '<<$1|img> (attached)>');
+  let converted = turndownService.turndown(html)
+  // re-replace first img tag, since it's processed last by to-markdown
+  converted = converted.replace(/<<([^|]+)\|img>>/, '<<$1|img> (attached)>');
   return {
     markdown: converted,
     firstImgSrc: firstImgSrc
   };
-};
+}
 
-var unencode = function(str) {
+function unencode(str) {
   return str.replace(/&#(\d+);/g, function(match, g1) {
     return String.fromCharCode(g1);
   });
-};
+}
 
 module.exports = {
   markdown: markdown,
