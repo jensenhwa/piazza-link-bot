@@ -5,8 +5,7 @@ var RegexBot = require('./regexbot')
 var RetryFilter = require('./retryfilter')
 var Piazza = require('./RPC')
 var urlregex = /\/class\/([^?]*)\?cid=(.*)/
-var TurndownService = require('turndown')
-var turndownService = new TurndownService()
+var normalize = require('./normalize')
 var randomiser = function (max) {
   return Math.floor(Math.random() * max)
 }
@@ -111,17 +110,19 @@ function unfurl_piazza (url) {
   return new Promise(resolve => {
     Piazza.getPost(nid, post)
       .then((res) => {
-        const postContent = turndownService.turndown(res.history[0].content)
+        const postContent = normalize.markdown(res.history[0].content)
         console.log(postContent)
         console.log("\n\n\n\n\n done \n\n\n\n")
         msgAttachment = {
           color: '#3e7aab',
-          title: turndownService.turndown(res.history[0].subject),
+          title: normalize.unencode(res.history[0].subject),
           title_link: 'https://piazza.com/class/' + nid + '?cid=' + post,
-          text: postContent,
+          text: postContent.markdown,
+          image_url: postContent.firstImgSrc,
           mrkdwn_in: ['text'],
           fields: [],
         }
+
         msgAttachment.fields.push(constructStatusField(res))
         anons = new Set()
         const authors = new Set()
