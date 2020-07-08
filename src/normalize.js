@@ -1,6 +1,6 @@
 const TurndownService = require('turndown')
 const turndownService = new TurndownService({ codeBlockStyle: 'fenced' })
-let firstImgSrc
+let imgSources = []
 
 turndownService.addRule('paragraph', {
   filter: 'p',
@@ -17,8 +17,9 @@ turndownService.addRule('teletype', {
 turndownService.addRule('image', {
   filter: 'img',
   replacement: function(innerHTML, node) {
-    firstImgSrc = node.getAttribute('src');
-    return "<<" + firstImgSrc + "|img>>";
+    let src = node.getAttribute('src');
+    imgSources.push(src)
+    return "<<" + src + "|img>>";
   }
 })
 turndownService.addRule('link', {
@@ -43,7 +44,7 @@ function markdown(html) {
   converted = converted.replace(/<<([^|]+)\|img>>/, '<<$1|img> (attached)>');
   return {
     markdown: converted,
-    firstImgSrc: firstImgSrc
+    images: imgSources
   };
 }
 

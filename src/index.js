@@ -118,7 +118,7 @@ function unfurl_piazza (url) {
           title: normalize.unencode(res.history[0].subject),
           title_link: 'https://piazza.com/class/' + nid + '?cid=' + post,
           text: postContent.markdown,
-          image_url: postContent.firstImgSrc,
+          image_url: postContent.images[0],
           mrkdwn_in: ['text'],
           fields: [],
         }
