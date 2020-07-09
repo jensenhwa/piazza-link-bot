@@ -125,14 +125,7 @@ function unfurl_piazza (url) {
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": `*<https://piazza.com/class/${nid}?cid=${post}|${normalize.unencode(res.history[0].subject)}>*`,
-              }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": postContent.markdown,
+                "text": `*<https://piazza.com/class/${nid}?cid=${post}|${normalize.unencode(res.history[0].subject)}>*\n${postContent.markdown}`,
               }
             },
             {
@@ -168,7 +161,7 @@ function unfurl_piazza (url) {
               }
             ]
           })
-        msgAttachment.blocks[2].fields.push(constructStatusField(res))
+        msgAttachment.blocks[1].fields.push(constructStatusField(res))
         anons = new Set()
         const authors = new Set()
         for (let i = 0; i < res.history.length; i++) {
@@ -182,7 +175,7 @@ function unfurl_piazza (url) {
       })
       .then((res) => {
         console.log(res)
-        msgAttachment.blocks[2].fields.push({
+        msgAttachment.blocks[1].fields.push({
           type: "mrkdwn",
           text: (res.length > 1 ? '*Authors*\n' : '*Author*\n') + res.map(function (e) {
             if (anons.has(e.id)) {
