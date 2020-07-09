@@ -144,11 +144,6 @@ function unfurl_piazza (url) {
               "fields": []
             },
             {
-              "type": "image",
-              "image_url": postContent.images[0],
-              "alt_text": "Piazza photo"
-            },
-            {
               "type": "context",
               "elements": [
                 {
@@ -165,7 +160,7 @@ function unfurl_piazza (url) {
           ],
           color: '#3e7aab'
         }
-
+        
         msgAttachment.blocks[2].fields.push(constructStatusField(res))
         anons = new Set()
         const authors = new Set()
@@ -191,7 +186,7 @@ function unfurl_piazza (url) {
           }).join('\n'),
           short: true,
         })
-        console.log(msgAttachment)
+        console.log(msgAttachment.blocks)
         resolve({ url: url, resp: msgAttachment })
       })
       .catch((err) => {
