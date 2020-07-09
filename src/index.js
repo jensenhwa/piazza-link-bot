@@ -142,25 +142,32 @@ function unfurl_piazza (url) {
                 "text": "some text",
               },
               "fields": []
-            },
-            {
-              "type": "context",
-              "elements": [
-                {
-                  "type": "image",
-                  "image_url": "https://images-na.ssl-images-amazon.com/images/I/712ey5%2Bl2%2BL._SY355_.png",
-                  "alt_text": "images"
-                },
-                {
-                  "type": "mrkdwn",
-                  "text": '<\!date^' + date.toString() + '^Post updated {date_pretty} at {time}|' + res.history[0].created + '>'
-                }
-              ]
             }
           ],
           color: '#3e7aab'
         }
-        
+
+        for (const img of postContent.images) {
+          msgAttachment.blocks.push({
+            "type": "image",
+            "image_url": img,
+            "alt_text": "Piazza photo"
+          })
+        }
+        msgAttachment.blocks.push({
+            "type": "context",
+            "elements": [
+              {
+                "type": "image",
+                "image_url": "https://images-na.ssl-images-amazon.com/images/I/712ey5%2Bl2%2BL._SY355_.png",
+                "alt_text": "images"
+              },
+              {
+                "type": "mrkdwn",
+                "text": '<\!date^' + date.toString() + '^Post updated {date_pretty} at {time}|' + res.history[0].created + '>'
+              }
+            ]
+          })
         msgAttachment.blocks[2].fields.push(constructStatusField(res))
         anons = new Set()
         const authors = new Set()
@@ -186,7 +193,7 @@ function unfurl_piazza (url) {
           }).join('\n'),
           short: true,
         })
-        console.log(msgAttachment.blocks)
+        console.log(JSON.stringify(msgAttachment))
         resolve({ url: url, resp: msgAttachment })
       })
       .catch((err) => {
