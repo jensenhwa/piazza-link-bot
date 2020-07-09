@@ -112,13 +112,15 @@ function unfurl_piazza (url) {
       .then((res) => {
         const postContent = normalize.markdown(res.history[0].content)
         console.log(postContent)
-        console.log("\n\n\n\n\n done \n\n\n\n")
+        let date = new Date(res.history[0].created)
+        date = date.getTime() / 1000
         msgAttachment = {
           color: '#3e7aab',
           title: normalize.unencode(res.history[0].subject),
           title_link: 'https://piazza.com/class/' + nid + '?cid=' + post,
           text: postContent.markdown,
           image_url: postContent.images[0],
+          footer: '<\!date^' + date.toString() + '^Post updated {date_pretty} at {time}|' + res.history[0].created + '>',
           mrkdwn_in: ['text'],
           fields: [],
         }
@@ -190,11 +192,8 @@ function constructStatusField (res) {
 
   if (res.no_answer_followup > 0) {
     statusEmoji = ':x:'
-    statusText.unshift(res.no_answer_followup.toString() + ' unresolved ' + (res.no_answer_followup > 1 ? ' followups.' : ' followup.'))
+    statusText.unshift(res.no_answer_followup.toString() + ' unresolved ' + (res.no_answer_followup > 1 ? 'followups.' : 'followup.'))
   }
-  date = new Date(res.history[0].created)
-  date = date.getTime() / 1000
-  statusText.push('<\!date^' + date.toString() + '^Updated {date_pretty} at {time}|' + res.history[0].created + '>')
   return {
     title: 'Status ' + statusEmoji,
     value: statusText.join('\n'),
