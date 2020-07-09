@@ -41,6 +41,9 @@ slackEvents.on('message', (message) => {
       var replyMessage = {
         channel: message.channel,
         text: reply,
+        username: "Leslie Nielson",
+        icon_emoji: ":honey2",
+        unfurl_links: true
       }
 
       // If bot is configured to reply as a thread, or if the message that
@@ -72,6 +75,8 @@ slackEvents.on('message', (message) => {
 })
 
 slackEvents.on('link_shared', (event) => {
+  console.log("unfurling now")
+  console.log(event)
   let unfurl = {
     channel: event.channel,
     ts: event.message_ts,
@@ -115,17 +120,53 @@ function unfurl_piazza (url) {
         let date = new Date(res.history[0].created)
         date = date.getTime() / 1000
         msgAttachment = {
-          color: '#3e7aab',
-          title: normalize.unencode(res.history[0].subject),
-          title_link: 'https://piazza.com/class/' + nid + '?cid=' + post,
-          text: postContent.markdown,
-          image_url: postContent.images[0],
-          footer: '<\!date^' + date.toString() + '^Post updated {date_pretty} at {time}|' + res.history[0].created + '>',
-          mrkdwn_in: ['text'],
-          fields: [],
+          blocks: [
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": `*<https://piazza.com/class/${nid}?cid=${post}|${normalize.unencode(res.history[0].subject)}>*`,
+              }
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": postContent.markdown,
+              }
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "some text",
+              },
+              "fields": []
+            },
+            {
+              "type": "image",
+              "image_url": postContent.images[0],
+              "alt_text": "Piazza photo"
+            },
+            {
+              "type": "context",
+              "elements": [
+                {
+                  "type": "image",
+                  "image_url": "https://images-na.ssl-images-amazon.com/images/I/712ey5%2Bl2%2BL._SY355_.png",
+                  "alt_text": "images"
+                },
+                {
+                  "type": "mrkdwn",
+                  "text": '<\!date^' + date.toString() + '^Post updated {date_pretty} at {time}|' + res.history[0].created + '>'
+                }
+              ]
+            }
+          ],
+          color: '#3e7aab'
         }
 
-        msgAttachment.fields.push(constructStatusField(res))
+        msgAttachment[2].fields.push(constructStatusField(res))
         anons = new Set()
         const authors = new Set()
         for (let i = 0; i < res.history.length; i++) {
@@ -139,7 +180,7 @@ function unfurl_piazza (url) {
       })
       .then((res) => {
         console.log(res)
-        msgAttachment.fields.push({
+        msgAttachment[2].fields.push({
           title: res.length > 1 ? 'Authors' : 'Author',
           value: res.map(function (e) {
             if (anons.has(e.id)) {
