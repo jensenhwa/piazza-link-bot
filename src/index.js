@@ -183,15 +183,14 @@ function unfurl_piazza (url) {
       .then((res) => {
         console.log(res)
         msgAttachment.blocks[2].fields.push({
-          title: res.length > 1 ? 'Authors' : 'Author',
-          value: res.map(function (e) {
+          type: "mrkdwn",
+          text: (res.length > 1 ? '*Authors*\n' : '*Author*\n') + res.map(function (e) {
             if (anons.has(e.id)) {
               return e.name + ' (anon)'
             } else {
               return e.name
             }
-          }).join('\n'),
-          short: true,
+          }).join('\n')
         })
         console.log(JSON.stringify(msgAttachment))
         resolve({ url: url, resp: msgAttachment })
@@ -239,9 +238,8 @@ function constructStatusField (res) {
     statusText.unshift(res.no_answer_followup.toString() + ' unresolved ' + (res.no_answer_followup > 1 ? 'followups.' : 'followup.'))
   }
   return {
-    title: 'Status ' + statusEmoji,
-    value: statusText.join('\n'),
-    short: true,
+    type: "mrkdwn",
+    text: '*Status ' + statusEmoji + '*\n' + statusText.join('\n')
   }
 }
 
