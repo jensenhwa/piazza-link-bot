@@ -166,7 +166,7 @@ function unfurl_piazza (url) {
           color: '#3e7aab'
         }
 
-        msgAttachment[2].fields.push(constructStatusField(res))
+        msgAttachment.blocks[2].fields.push(constructStatusField(res))
         anons = new Set()
         const authors = new Set()
         for (let i = 0; i < res.history.length; i++) {
@@ -180,7 +180,7 @@ function unfurl_piazza (url) {
       })
       .then((res) => {
         console.log(res)
-        msgAttachment[2].fields.push({
+        msgAttachment.blocks[2].fields.push({
           title: res.length > 1 ? 'Authors' : 'Author',
           value: res.map(function (e) {
             if (anons.has(e.id)) {
