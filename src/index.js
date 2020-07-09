@@ -192,7 +192,8 @@ function constructStatusField (res) {
     statusEmoji = ':x:'
     statusText.unshift(res.no_answer_followup.toString() + ' unresolved ' + (res.no_answer_followup > 1 ? ' followups.' : ' followup.'))
   }
-  date = Date(res.history[0].created).getTime() / 1000
+  date = new Date(res.history[0].created)
+  date = date.getTime() / 1000
   statusText.push('<\!date^' + date.toString() + '^Updated {date_pretty} at {time}|' + res.history[0].created + '>')
   return {
     title: 'Status ' + statusEmoji,
