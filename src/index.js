@@ -41,6 +41,7 @@ slackEvents.on('message', (message) => {
       var replyMessage = {
         channel: message.channel,
         text: reply,
+        icon_emoji: ":honey2",
       }
 
       // If bot is configured to reply as a thread, or if the message that
@@ -82,7 +83,7 @@ slackEvents.on('link_shared', (event) => {
         unfurl.unfurls[results[i].url] = results[i].resp
       }
       web.chat.unfurl(unfurl).then((resp) => {
-        console.log('yayyyy')
+        console.log('Unfurling complete.')
       })
     }
   )
