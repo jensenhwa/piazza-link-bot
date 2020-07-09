@@ -191,6 +191,7 @@ function unfurl_piazza (url) {
           }).join('\n'),
           short: true,
         })
+        console.log(msgAttachment)
         resolve({ url: url, resp: msgAttachment })
       })
       .catch((err) => {
