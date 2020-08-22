@@ -41,7 +41,6 @@ slackEvents.on('message', (message) => {
       var replyMessage = {
         channel: message.channel,
         text: reply,
-        username: "Leslie Nielson",
         unfurl_links: true
       }
 
