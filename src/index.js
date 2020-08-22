@@ -41,8 +41,6 @@ slackEvents.on('message', (message) => {
       var replyMessage = {
         channel: message.channel,
         text: reply,
-        username: "Leslie Nielson",
-        icon_emoji: ":honey2",
         unfurl_links: true
       }
 
@@ -75,14 +73,14 @@ slackEvents.on('message', (message) => {
 })
 
 slackEvents.on('link_shared', (event) => {
-  console.log("unfurling now")
+  console.log("unfurling links from the following event:")
   console.log(event)
   let unfurl = {
     channel: event.channel,
     ts: event.message_ts,
     unfurls: {}
   }
-  link_handler(event.links).then((results) => {
+  handle_links(event.links).then((results) => {
       for (let i = 0; i < results.length; i++) {
         unfurl.unfurls[results[i].url] = results[i].resp
       }
@@ -97,7 +95,7 @@ slackEvents.on('error', console.error)
 
 
 
-function link_handler (links) {
+function handle_links (links) {
   const promises = []
   for (const link of links) {
     promises.push(unfurl_piazza(link.url))
@@ -126,16 +124,9 @@ function unfurl_piazza (url) {
               "text": {
                 "type": "mrkdwn",
                 "text": `*<https://piazza.com/class/${nid}?cid=${post}|${normalize.unencode(res.history[0].subject)}>*\n${postContent.markdown}`,
-              }
-            },
-            {
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": "some text",
               },
               "fields": []
-            }
+            },
           ],
           color: '#3e7aab'
         }
@@ -161,7 +152,7 @@ function unfurl_piazza (url) {
               }
             ]
           })
-        msgAttachment.blocks[1].fields.push(constructStatusField(res))
+        msgAttachment.blocks[0].fields.push(constructStatusField(res))
         anons = new Set()
         const authors = new Set()
         for (let i = 0; i < res.history.length; i++) {
@@ -175,7 +166,7 @@ function unfurl_piazza (url) {
       })
       .then((res) => {
         console.log(res)
-        msgAttachment.blocks[1].fields.push({
+        msgAttachment.blocks[0].fields.push({
           type: "mrkdwn",
           text: (res.length > 1 ? '*Authors*\n' : '*Author*\n') + res.map(function (e) {
             if (anons.has(e.id)) {
