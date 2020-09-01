@@ -29,7 +29,7 @@ async function login() {
   let response
   try {
     response = await RPC('user.login', {
-      email: 'hwaj+388@umich.edu',
+      email: 'eecs388student@umich.edu',
       pass: 'UA5#4mnPE4RKfgVG'
     })
   } catch (error) {

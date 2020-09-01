@@ -50,6 +50,8 @@ slackEvents.on('message', (message) => {
       if (config.reply_as_thread || message.thread_ts !== undefined) {
         replyMessage.thread_ts = message.thread_ts || message.ts
       }
+      console.log("replying:")
+      console.log(replyMessage)
 
       web.chat.postMessage(replyMessage)
         .catch((error) => {
@@ -84,6 +86,8 @@ slackEvents.on('link_shared', (event) => {
       for (let i = 0; i < results.length; i++) {
         unfurl.unfurls[results[i].url] = results[i].resp
       }
+      console.log("Unfurling with:")
+      console.log(unfurl)
       web.chat.unfurl(unfurl).then((resp) => {
         console.log('Unfurling complete.')
       })
