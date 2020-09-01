@@ -14,6 +14,7 @@ var retryFilter = new RetryFilter(config)
 
 const { WebClient, ErrorCode } = require('@slack/web-api')
 const { createEventAdapter } = require('@slack/events-api')
+const util = require('util')
 
 Piazza.login()
 
@@ -51,7 +52,7 @@ slackEvents.on('message', (message) => {
         replyMessage.thread_ts = message.thread_ts || message.ts
       }
       console.log("replying:")
-      console.log(replyMessage)
+      console.log(util.inspect(replyMessage, false, null, true /* enable colors */))
 
       web.chat.postMessage(replyMessage)
         .catch((error) => {
@@ -87,7 +88,7 @@ slackEvents.on('link_shared', (event) => {
         unfurl.unfurls[results[i].url] = results[i].resp
       }
       console.log("Unfurling with:")
-      console.log(unfurl)
+      console.log(util.inspect(unfurl, false, null, true /* enable colors */))
       web.chat.unfurl(unfurl).then((resp) => {
         console.log('Unfurling complete.')
       })
