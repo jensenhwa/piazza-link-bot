@@ -52,7 +52,7 @@ slackEvents.on('message', (message) => {
         replyMessage.thread_ts = message.thread_ts || message.ts
       }
       console.log("replying:")
-      console.log(util.inspect(replyMessage, false, null, true /* enable colors */))
+      console.log(util.inspect(replyMessage, false, null))
 
       web.chat.postMessage(replyMessage)
         .catch((error) => {
@@ -88,7 +88,7 @@ slackEvents.on('link_shared', (event) => {
         unfurl.unfurls[results[i].url] = results[i].resp
       }
       console.log("Unfurling with:")
-      console.log(util.inspect(unfurl, false, null, true /* enable colors */))
+      console.log(util.inspect(unfurl, false, null))
       web.chat.unfurl(unfurl).then((resp) => {
         console.log('Unfurling complete.')
       })
